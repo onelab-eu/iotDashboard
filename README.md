@@ -1,2 +1,2 @@
-# iot-dashboard
+# iotDashboard
 Visualization dashboard for IoT devices
