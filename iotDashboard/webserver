@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 '''
     Webserver for the IoT-Dashboard
     
@@ -10,7 +9,7 @@
 
     (c) 2014 - 2015 - 2016
     Ciro Scognamiglio <ciro.scognamiglio@lip6.fr>
-    Loïc Baron <loic.baron@lip6.fr>
+    Loc Baron <loic.baron@lip6.fr>
 '''
 
 import sys
@@ -20,7 +19,7 @@ import logging
 from tornado import web, ioloop
 
 from iotDashboard import templates, static
-from iotDashboard.protocols import rest, websocket
+from iotDashboard.protocols import websocket
 from iotDashboard.controllers import home
 
 logging.basicConfig(level=logging.INFO,

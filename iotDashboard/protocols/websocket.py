@@ -1,6 +1,9 @@
 import logging, json
 from tornado import websocket, gen
 
+import txthings.coap as coap
+import txthings.resource as resource
+
 logger = logging.getLogger('iotDashboard.websocket')
 cl = []
 
@@ -22,18 +25,29 @@ class Api(websocket.WebSocketHandler):
             cl.remove(self)
         logger.info("WebSocket closed (%s)" % self.request.remote_ip)
 
+    def printResponse(self, response):
+        print 'First result: ' + response.payload
+        self.write_message(response.payload)
+
+    def printLaterResponse(self, response):
+        print 'Observe result: ' + response.payload
+        self.write_message(response.payload)
+
+    def noResponse(self, failure):
+        print 'Failed to fetch resource:'
+        print failure
+        self.write_message(failure)
+
     @gen.coroutine
     def jobs(self):
-        conn = None
-        try :
-            conn = yield r.connect(host="localhost", port=28015)
-        except r.RqlDriverError :
-            logger.error("can't connect to RethinkDB")
-            self.write_message(json.dumps({ "ret" : 0, "msg" : "connection error" }, ensure_ascii = False))
+        endpoint = resource.Endpoint(None)
+        protocol = coap.Coap(endpoint)
+        request = coap.Message(code=coap.GET)
+        #Send request to "coap://iot.eclipse.org:5683/obs"
+        request.opt.uri_path = ('obs',)
+        request.opt.observe = 0
+        request.remote = ("198.41.30.241", coap.COAP_PORT)
+        d = protocol.request(request, observeCallback=self.printLaterResponse)
+        d.addCallback(self.printResponse)
+        d.addErrback(self.noResponse)
 
-        if (conn) :
-            feed = yield r.db("myops2").table("jobs").changes().run(conn)
-            while (yield feed.fetch_next()):
-                change = yield feed.next()
-                #self.write_message(json.dumps(change['new_val'], ensure_ascii = False).encode('utf8'))
-                self.write_message(json.dumps(change['new_val']))
