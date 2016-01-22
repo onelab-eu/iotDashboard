@@ -2,7 +2,7 @@
 feed = (function() {
     var socket = null;
     //var ellog = document.getElementById('log');
-    var wsuri = "ws://" + window.location.hostname + ":8111/ws";
+    var wsuri = "ws://" + window.location.hostname + ":8000/ws";
     var el = $('#log');
 
     return {
@@ -63,7 +63,3 @@ feed = (function() {
 
     }
 });
-
-
-
-

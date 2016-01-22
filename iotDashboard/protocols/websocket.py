@@ -1,9 +1,7 @@
 import logging, json
 from tornado import websocket, gen
-import rethinkdb as r
 
-logger = logging.getLogger('myops2.websocket')
-r.set_loop_type("tornado")
+logger = logging.getLogger('iotDashboard.websocket')
 cl = []
 
 class Api(websocket.WebSocketHandler):
@@ -23,22 +21,6 @@ class Api(websocket.WebSocketHandler):
         if self in cl:
             cl.remove(self)
         logger.info("WebSocket closed (%s)" % self.request.remote_ip)
-
-    @gen.coroutine
-    def feed(self):
-        conn = None
-        try :
-            conn = yield r.connect(host="localhost", port=28015)
-        except r.RqlDriverError :
-            logger.error("can't connect to RethinkDB")
-            self.write_message(json.dumps({ "ret" : 0, "message" : "connection error" }, ensure_ascii = False))
-
-        if (conn) :
-            feed = yield r.db("myops2").table("resources").changes().run(conn)
-            while (yield feed.fetch_next()):
-                change = yield feed.next()
-                self.write_message(json.dumps(change, ensure_ascii = False).encode('utf8'))
-                print(change)
 
     @gen.coroutine
     def jobs(self):
