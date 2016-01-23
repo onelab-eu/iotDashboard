@@ -19,8 +19,8 @@ import logging
 from tornado import web, ioloop
 
 from iotDashboard import templates, static
-from iotDashboard.protocols import websocket
 from iotDashboard.controllers import home
+from iotDashboard.protocols import websocket
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     ], template_path = templates)
 
-    app.listen(8000)
+    app.listen(8111)
 
 
     try :
