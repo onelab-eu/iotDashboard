@@ -1,0 +1,12 @@
+.FixedHeightContainer {
+    /* float:right; */
+    height: 350px;
+    width:350px; 
+    padding:3px; 
+    background:grey;
+}
+.Logs {
+    height:345px;
+    overflow:auto;
+    background:#DDD;
+}

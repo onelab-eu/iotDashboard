@@ -1,10 +1,29 @@
+var mydata = Array();
+function drawVisualization() {
+
+    var data = new google.visualization.DataTable();
+    
+    data.addColumn('datetime', 'Time of Day');
+    data.addColumn('number', 'Light in Lux');
+    
+    data.addRows(
+        mydata
+    );
+    
+    
+    new google.visualization.LineChart(document.getElementById('visualization')).
+      draw(data, {curveType: "function",
+                  width: 500, height: 400,
+                  vAxis: {maxValue: 0.1}}
+          );
+}
+google.setOnLoadCallback(drawVisualization);
 
 feed = (function() {
     var socket = null;
     //var ellog = document.getElementById('log');
-    var wsuri = "ws://" + window.location.hostname + ":8111/ws";
+    var wsuri = "ws://" + window.location.hostname + ":8000/ws";
     var el = $('#log');
-
     return {
         connect: function ()
         {
@@ -27,20 +46,22 @@ feed = (function() {
                 }
 
                 socket.onmessage = function(e) {
-                    var result = JSON.parse(e.data);
+                    var d = new Date();
+                    var result = JSON.parse(JSON.parse(e.data));
                     console.log(result);
-                    if (result.id) {
-                        el.prepend('<div>' +
-                            '<b>Job:</b> ' + result.id +
-                            ' <b>Status:</b> ' + result.jobstatus +
-                            ' <b>Command:</b> ' + result.command +
-                            ' <b>Message:</b> ' + result.message +
-                            '</div>');
-                        if (result.stdout) {
-                            el.prepend('<div><b>Output:</b><pre>' + result.stdout + '</pre></div>')
+                    if(result.status==0){
+                        if($("#"+result.method).length==0){
+                            $('#content').prepend("<h2>Logs: "+result.method+"</h2>") 
+                            $("#content").append("<div id='log_"+result.method+"' class='FixedHeightContainer'></div>");
+                            $('#log_'+result.method).prepend("<div id='"+result.method+"' class='Logs'>");
                         }
-                    } else {
-                        el.append('<div>'+result.message+'</div>');
+                        $("#"+result.method).prepend('<div>'+d.toLocaleString()+" - "+result.source+" = "+result.message+"</div>")
+                        // message = light: 0.091553 lux
+                        r = new RegExp(/\d*([.,\/]?\d+)/);
+                        value = r.exec(result.message);
+                        console.log(value[0]);
+                        mydata.push([d,parseFloat(value[0])]);
+                        drawVisualization();
                     }
                 }
             }

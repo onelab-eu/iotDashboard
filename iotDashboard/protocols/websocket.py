@@ -28,5 +28,5 @@ class Api(websocket.WebSocketHandler):
     def send_to_clients(self, message):
         for client in cl:
             if client is not self:
-                client.write_message(json.dumps({ "message": message }))
+                client.write_message(json.dumps(message))
 

@@ -6,6 +6,7 @@ Created on 08-09-2012
 
 import sys
 import logging
+import json
 
 from twisted.internet.defer import Deferred
 from twisted.internet.protocol import DatagramProtocol
@@ -36,8 +37,10 @@ class Agent():
     method's main purpose is to act upon received response (here it's simple print).
     """
 
-    def __init__(self, protocol):
+    def __init__(self, protocol, server, method):
         self.protocol = protocol
+        self.method = method
+        self.server = server
         self.message = None
         reactor.callLater(1, self.requestResource)
 
@@ -46,7 +49,7 @@ class Agent():
         #Send request to "coap://iot.eclipse.org:5683/obs"
         # coap://californium.eclipse.org:5683
         # coap get -o coap://[2001:660:5307:3101::a869]:5683/light
-        request.opt.uri_path = ('light',)
+        request.opt.uri_path = (self.method,)
         request.opt.observe = 0
         request.remote = ("2001:660:5307:3101::a869", coap.COAP_PORT)
         d = protocol.request(request, observeCallback=self.printLaterResponse)
@@ -56,14 +59,14 @@ class Agent():
     def printResponse(self, response):
         log.msg("printResponse")
         print 'First result: ' + response.payload
-        self.message = response.payload
+        self.message = {'method':self.method,'source':self.server,'status':0,'message':response.payload}
         ioloop.IOLoop.instance().run_sync(self.send_ws)
         #reactor.stop()
 
     def printLaterResponse(self, response):
         log.msg("printLaterResponse")
         print 'Observe result: ' + response.payload
-        self.message = response.payload
+        self.message = {'method':self.method,'source':self.server,'status':0,'message':response.payload}
         ioloop.IOLoop.instance().run_sync(self.send_ws)
 
     def noResponse(self, failure):
@@ -71,18 +74,18 @@ class Agent():
         print 'Failed to fetch resource:'
         print failure
         self.message = failure
+        self.message = {'method':self.method,'source':self.server,'status':-1,'message':failure}
         ioloop.IOLoop.instance().run_sync(self.send_ws)
         #reactor.stop()
 
     @gen.coroutine
     def send_ws(self):
         print "connect ws"
-        ws = yield websocket.websocket_connect("ws://localhost:8111/ws")
+        ws = yield websocket.websocket_connect("ws://localhost:8000/ws")
         print "send msg ws"
-        s = ws.write_message(self.message)
+        s = ws.write_message(json.dumps(self.message))
         print "msg sent ws"
         ws.close()
-
 
 logging.basicConfig(level=logging.DEBUG,
                     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
@@ -92,7 +95,9 @@ logging.basicConfig(level=logging.DEBUG,
 log.startLogging(sys.stdout)
 endpoint = resource.Endpoint(None)
 protocol = coap.Coap(endpoint)
-client = Agent(protocol)
+server = "2001:660:5307:3101::a869"
+method = "light"
+client = Agent(protocol,server,method)
 
 # IPv4
 #reactor.listenUDP(61616, protocol)
